@@ -44,6 +44,7 @@ When a workaround is unavoidable, keep it small and add a comment saying what th
 - `src/server/assistant.server.ts` — the agent, its tool handlers and its workflow, shared by both processes.
 - `src/server/chat.server.ts` — the web process's `/api/chat` routes. They start workflows and stream their event logs.
 - `src/server/worker.server.ts` — the worker process, which executes runs and holds the model layer.
+- `src/server/auth.server.ts` — fake authentication: the `CurrentUser` run context and the middleware that provides it to each request.
 - `src/server/cluster.server.ts` — the workflow engine, as a runner for the worker and a client for the web process.
 - `src/server/event-log.server.ts` — the library's `EventLog` store, on Postgres.
 - `src/server/thread-store.server.ts` — the library's `Thread` store, on Postgres.

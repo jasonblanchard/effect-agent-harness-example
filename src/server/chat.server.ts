@@ -4,6 +4,7 @@ import { convertMessagesToModelMessages, modelMessagesToUIMessages } from "@tans
 import type { ModelMessage } from "@tanstack/ai";
 import { AgUi, EventLog, History, Sse } from "effect-agent-harness";
 import { AssistantWorkflow } from "./assistant.server.ts";
+import { AuthMiddlewareLayer } from "./auth.server.ts";
 import { WorkflowClientLayer } from "./cluster.server.ts";
 import { EventLogStoreLayer } from "./event-log.server.ts";
 import { ThreadStoreLayer } from "./thread-store.server.ts";
@@ -14,7 +15,9 @@ const ChatQuery = Schema.Struct({
   offset: Schema.optional(Schema.String),
 });
 
-const ResumeHeaders = Schema.Struct({ "last-event-id": Schema.optional(Schema.String) });
+const ResumeHeaders = Schema.Struct({
+  "last-event-id": Schema.optional(Schema.String),
+});
 
 /** How long a run's event stream stays open with nothing new. Longer than the slowest model or tool step. */
 const IDLE_TIMEOUT = "2 minutes";
@@ -103,15 +106,20 @@ const ChatRoutes = HttpRouter.use((router) =>
       }).pipe(
         Effect.catch((error) =>
           Effect.succeed(
-            HttpServerResponse.text(`Invalid request: ${error.message}`, { status: 400 }),
+            HttpServerResponse.text(`Invalid request: ${error.message}`, {
+              status: 400,
+            }),
           ),
         ),
       ),
     );
   }),
 ).pipe(
+  Layer.provide(AuthMiddlewareLayer),
   Layer.provideMerge(Layer.mergeAll(ThreadStoreLayer, EventLogStoreLayer, WorkflowClientLayer)),
 );
 
 /** The chat endpoint as a web handler (`Request => Promise<Response>`), mounted by `src/routes/api/chat.ts`. */
-export const { handler } = HttpRouter.toWebHandler(ChatRoutes, { disableLogger: true });
+export const { handler } = HttpRouter.toWebHandler(ChatRoutes, {
+  disableLogger: true,
+});
