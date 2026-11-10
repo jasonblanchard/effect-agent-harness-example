@@ -15,6 +15,9 @@ importers:
       '@effect/ai-anthropic':
         specifier: 4.0.5
         version: 4.0.5(effect@4.0.5)
+      '@effect/sql-pg':
+        specifier: 4.0.5
+        version: 4.0.5(effect@4.0.5)
       '@tanstack/ai':
         specifier: ^1.0.0
         version: 1.2.0(zod@4.6.7)
@@ -147,6 +150,11 @@ packages:
 
   '@effect/ai-anthropic@4.0.5':
     resolution: {integrity: sha512-Vb8pEJrwqeRd3UT0BtOM2IHlLgRp32XunUnWfEd/DpV0jyKgZHSKVVxsDs6AsMyZpRsD1klDtvfCndDiQV4TyQ==}
+    peerDependencies:
+      effect: ^4.0.5
+
+  '@effect/sql-pg@4.0.5':
+    resolution: {integrity: sha512-F9tG76H+aryhYcp5pvgd+MwWrNltv3XAuLcZSBsOOX6q+PEl+IM4zkQKzx0TF9OsEMH/SQ+3gZRdYWOsDF+vJQ==}
     peerDependencies:
       effect: ^4.0.5
 
@@ -1404,6 +1412,10 @@ snapshots:
   '@cfworker/json-schema@4.1.6': {}
 
   '@effect/ai-anthropic@4.0.5(effect@4.0.5)':
+    dependencies:
+      effect: 4.0.5
+
+  '@effect/sql-pg@4.0.5(effect@4.0.5)':
     dependencies:
       effect: 4.0.5
 

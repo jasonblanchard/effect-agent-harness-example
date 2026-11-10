@@ -10,7 +10,7 @@ The app is a means to an end. What matters most is what building it teaches us a
 
 - **Public interface:** `src/index.ts` in the library, which re-exports `AgUi`, `AgUiSchema`, `Messages`, `Agent`, `Sse`, `Thread`, `History`, `Checkpoint`, `EventLog` and `Runner` as namespaces. Anything else, including `src/internal/`, is private. Don't import it from here.
 - **Library docs:** read its `README.md` and `AGENTS.md` (at both the monorepo root and the package) before relying on behaviour. They record the invariants the library promises.
-- **Separate `effect` copies:** the link means this app and the library each resolve their own physical copy of `effect@4.0.5`. If something behaves as though two identical modules are different, check this first. It is a side effect of linking, not a flaw in the API.
+- **Separate `effect` copies:** the link means this app and the library each resolve their own physical copy of `effect@4.0.5`. If something behaves as though two identical modules are different, check this first. For example, this app's `Schema` can't encode or decode schemas built by the library, such as `Messages.Entry`. It is a side effect of linking, not a flaw in the API.
 
 ## Inspect the source, then give feedback
 
@@ -42,6 +42,9 @@ When a workaround is unavoidable, keep it small and add a comment saying what th
 ## Layout
 
 - `src/server/chat.server.ts` — the agent definition, model and store layers, and the `/api/chat` routes. Most library usage is here.
+- `src/server/thread-store.server.ts` — the library's `Thread` store, on Postgres.
+- `src/server/database.server.ts` — the connection pool and the list of migrations, which run when the layer is built.
+- `src/server/migrations/` — one file per migration. Register new ones in `database.server.ts`.
 - `src/routes/api/chat.ts` — the TanStack Start server route, which only forwards to the handler above.
 - `src/routes/index.tsx` — the chat page.
 - `src/tools/` — tool definitions and handlers. `browser-time.tool.ts` is the browser-side one.
@@ -57,9 +60,11 @@ Use pnpm.
 | `pnpm build` | Production build                        |
 | `pnpm tsc`   | Typecheck                               |
 
-`pnpm lint`, `pnpm format` and `pnpm format:check` exist in `package.json`, but `oxlint` and `oxfmt` aren't installed in this repo, so they currently fail.
+`devenv up` runs the web process and Postgres together. It's defined in `flake.nix` and available in the shell that direnv loads. Postgres listens on `127.0.0.1:5432` with a database named `effect_agent_harness_example`.
 
-The server needs `ANTHROPIC_API_KEY` in `.env`. Don't print or commit that file.
+`pnpm lint` works. `pnpm format` and `pnpm format:check` currently fail because their `-c` flag has no path, so run `pnpm exec oxfmt -c .oxfmtrc.json` instead.
+
+The server needs `ANTHROPIC_API_KEY` in `.env`, and `DATABASE_URL`, which the flake's shell sets. Don't print or commit `.env`.
 
 ## Conventions
 

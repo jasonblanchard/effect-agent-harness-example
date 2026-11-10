@@ -27,12 +27,13 @@ function Chat() {
 function ChatThread({ threadId }: { readonly threadId: string }) {
   // The server owns the thread's history. With `persistence: true`, the client
   // loads it on mount (`GET /api/chat?threadId=…`), open approvals included,
-  // and still sends its whole history on every run. Don't set `history`:
+  // rejoins a run still going, and still sends its whole history on every run. Don't set `history`:
   // paging makes the client send only new messages, which the server rejects.
   // `tools` are frontend tools: the browser runs them and answers in the next run.
   const { messages, sendMessage, isLoading, error, stop, interrupts, resumeInterruptsUnsafe } =
     useChat({
-      connection: fetchServerSentEvents("/api/chat"),
+      // The URL carries the thread id because the request to join a run doesn't add it.
+      connection: fetchServerSentEvents(`/api/chat?threadId=${encodeURIComponent(threadId)}`),
       threadId,
       persistence: true,
       tools: [getBrowserTime],
