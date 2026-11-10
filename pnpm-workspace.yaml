@@ -1,3 +1,8 @@
 overrides:
   effect-agent-harness: link:../effect-agent-harness/packages/effect-agent-harness
   effect-agent-harness-monorepo: link:../effect-agent-harness
+  # `@effect/platform-node` asks for a caret range, whose newest release needs a newer `effect`.
+  "@effect/platform-node-shared": 4.0.5
+  # One physical copy of `effect` for the app and the linked library, because a
+  # workflow built by one copy can't be run by an engine from the other.
+  effect: link:../effect-agent-harness/packages/effect-agent-harness/node_modules/effect

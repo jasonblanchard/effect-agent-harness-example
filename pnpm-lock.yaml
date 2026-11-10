@@ -7,6 +7,8 @@ settings:
 overrides:
   effect-agent-harness: link:../effect-agent-harness/packages/effect-agent-harness
   effect-agent-harness-monorepo: link:../effect-agent-harness
+  '@effect/platform-node-shared': 4.0.5
+  effect: link:../effect-agent-harness/packages/effect-agent-harness/node_modules/effect
 
 importers:
 
@@ -14,10 +16,13 @@ importers:
     dependencies:
       '@effect/ai-anthropic':
         specifier: 4.0.5
-        version: 4.0.5(effect@4.0.5)
+        version: 4.0.5(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)
+      '@effect/platform-node':
+        specifier: 4.0.5
+        version: 4.0.5(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)(redis@6.3.1)
       '@effect/sql-pg':
         specifier: 4.0.5
-        version: 4.0.5(effect@4.0.5)
+        version: 4.0.5(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)
       '@tanstack/ai':
         specifier: ^1.0.0
         version: 1.2.0(zod@4.6.7)
@@ -31,8 +36,8 @@ importers:
         specifier: ^1.169.4
         version: 1.169.5(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0))
       effect:
-        specifier: 4.0.5
-        version: 4.0.5
+        specifier: link:../effect-agent-harness/packages/effect-agent-harness/node_modules/effect
+        version: link:../effect-agent-harness/packages/effect-agent-harness/node_modules/effect
       effect-agent-harness:
         specifier: link:../effect-agent-harness/packages/effect-agent-harness
         version: link:../effect-agent-harness/packages/effect-agent-harness
@@ -152,6 +157,19 @@ packages:
     resolution: {integrity: sha512-Vb8pEJrwqeRd3UT0BtOM2IHlLgRp32XunUnWfEd/DpV0jyKgZHSKVVxsDs6AsMyZpRsD1klDtvfCndDiQV4TyQ==}
     peerDependencies:
       effect: ^4.0.5
+
+  '@effect/platform-node-shared@4.0.5':
+    resolution: {integrity: sha512-a8rCdEkfZBGe9C6bsIjxVZuRp73svIyK5IHwHdDAVsvZXjrbkxusfI+rZ8WlX31RP1mKizwI/E72GQTNfdMWHw==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      effect: ^4.0.5
+
+  '@effect/platform-node@4.0.5':
+    resolution: {integrity: sha512-v4KD5fWvEUa4QmWFpZFbBsRhmfnTP6ETCME2r9ifyXVDPjhfpxpTZl41prjgQFMqZBHdWWCl7YC5ImbXv5ui5g==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      effect: ^4.0.5
+      redis: '>=5.0.0 <7.0.0'
 
   '@effect/sql-pg@4.0.5':
     resolution: {integrity: sha512-F9tG76H+aryhYcp5pvgd+MwWrNltv3XAuLcZSBsOOX6q+PEl+IM4zkQKzx0TF9OsEMH/SQ+3gZRdYWOsDF+vJQ==}
@@ -436,6 +454,42 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [win32]
+
+  '@redis/bloom@6.3.1':
+    resolution: {integrity: sha512-dpF9j2yJDoPzSCaZn0MSB3xzmnXQVJeTSAWJcQVcgbmluwhpFeemmII0cF1t+WYfoVS+shEFq79+MmUItgzJLg==}
+    engines: {node: '>= 20.0.0'}
+    peerDependencies:
+      '@redis/client': ^6.3.1
+
+  '@redis/client@6.3.1':
+    resolution: {integrity: sha512-masbfVKULdoAofwddepZxRhWa4w6zvBHn6TRn90TRPrRkVIlGCur3pFqwWaCbMxtYI9twepkz63e/T/tEH8GjA==}
+    engines: {node: '>= 20.0.0'}
+    peerDependencies:
+      '@node-rs/xxhash': ^1.1.0
+      '@opentelemetry/api': '>=1 <2'
+    peerDependenciesMeta:
+      '@node-rs/xxhash':
+        optional: true
+      '@opentelemetry/api':
+        optional: true
+
+  '@redis/json@6.3.1':
+    resolution: {integrity: sha512-fMz4kUwJzEftcU9EMaqsjZcUwzpTQLOYRqhQsAD6uKvZWeamblK13ZhgO5SzVSZVk31jmwLeTRpU5GAl5egfUw==}
+    engines: {node: '>= 20.0.0'}
+    peerDependencies:
+      '@redis/client': ^6.3.1
+
+  '@redis/search@6.3.1':
+    resolution: {integrity: sha512-T67pvPUpW82VrZLvihO8O2DFMC7eY2oMAzMzapCbiPZn7mdWqHMEIlohYim12gIawT5kn6qT/Cvmm4WulKB+kQ==}
+    engines: {node: '>= 20.0.0'}
+    peerDependencies:
+      '@redis/client': ^6.3.1
+
+  '@redis/time-series@6.3.1':
+    resolution: {integrity: sha512-MNDgrm+i63M/1a+XA+HcDsScwt4uBh/fGGJ84swTQZTFK5K5wMmxdlTRa4ZgmNJzjxMaszW/ipPScMUGV3aAMg==}
+    engines: {node: '>= 20.0.0'}
+    peerDependencies:
+      '@redis/client': ^6.3.1
 
   '@rolldown/binding-android-arm-eabi@1.2.16':
     resolution: {integrity: sha512-ia3DwAs0OsMGS7+IConptSiyk9pEXkOx/AbJ2n/lAGxH3QkWQus1t8d7gnAT38FCU2sQu8lUbeR6AiZFv4JxaA==}
@@ -731,6 +785,9 @@ packages:
   '@types/react@19.3.0':
     resolution: {integrity: sha512-N0rFCuH9YoxG9/m61l9MfpJKfmLOVU0em7ipIz6TRgSSkvReLB9vL85GB+yr8Bs5leqpvg96JSwF4ZS1s4viQg==}
 
+  '@types/ws@8.18.2':
+    resolution: {integrity: sha512-67MQl+fpWKVTT1NYdnmo3U4sc/xPo/zQBncVnI74qmQa0z/b+1g6iYqNmGCPbxO+zz2aklb08a0oHfegiVd0/w==}
+
   '@typescript/typescript-aix-ppc64@7.0.2':
     resolution: {integrity: sha512-MTKKkWB7p/0E9xi1d1tHtZ5PiLkGEMIq88pK2CubZjOsLtYTLqhgIgi6zepFa+9GHZ6h05NMCkQxGKiPXMxXtQ==}
     engines: {node: '>=16.20.0'}
@@ -919,9 +976,6 @@ packages:
   diff@9.0.0:
     resolution: {integrity: sha512-svtcdpS8CgJyqAjEQIXdb3OjhFVVYjzGAPO8WGCmRbrml64SPw/jJD4GoE98aR7r25A0XcgrK3F02yw9R/vhQw==}
     engines: {node: '>=0.3.1'}
-
-  effect@4.0.5:
-    resolution: {integrity: sha512-BY4/28NlpOd99yzmV741xbVGmp+1U7tks4oB7F/Png64bTa5tm5eCA6W0RiXsnuLDDoJpjfVSo4Dnq4BZb/89Q==}
 
   electron-to-chromium@1.5.478:
     resolution: {integrity: sha512-pftG+ma5Lm8O6/p45bhYT6StBN5ziQymaRzmCZwFl8DwWHKPPD93FdOmP1aqftcepolQYvrcyTLa17kE8Yf+jg==}
@@ -1138,6 +1192,10 @@ packages:
     resolution: {integrity: sha512-Kko+Y5XQ6fM+Ce3dq3m9YGxnacYZYl9cA1wZjaF3Vbry2L3i1qVg8+CAgNPsXRArPMUMCaOR7oa9Nqntc43JKA==}
     engines: {node: '>= 20.19.0'}
 
+  redis@6.3.1:
+    resolution: {integrity: sha512-mV96ZKxQ4CGn3SyEGaY0Lb9YA443mdVey3c+mdr0NAUaBxiOZGoYCWX8PoM55kictSOmxlJRtZJxIsmZm3jL+w==}
+    engines: {node: '>= 20.0.0'}
+
   rolldown@1.2.16:
     resolution: {integrity: sha512-bWvlMpFKiTfDKfnK7FC2MPgPeWCf/Kpwsq49ApdW+FQaBZb6O6dZ4MAPbPUjp7hYQrw/RobqCzn64BRrQecGHw==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -1191,6 +1249,10 @@ packages:
 
   undici-types@8.9.0:
     resolution: {integrity: sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg==}
+
+  undici@8.12.4:
+    resolution: {integrity: sha512-8Mx+uNKKER2bA4AdtedkqRbwUCIJFr2nJckXRe5yrDqzePqwLP7VNcctN8/XdmDSbF7mS+jJKIszlL+vbam1VA==}
+    engines: {node: '>=22.19.0'}
 
   unplugin@3.7.0:
     resolution: {integrity: sha512-GrM2uq3DQo3hvLU2FjeYhooJ8BY9N6j1Fbzgx7Pta3VVJevsD3VP4dPjZkZOS0mLvN8w9zzr9OlP+31bSMyuLw==}
@@ -1292,6 +1354,18 @@ packages:
 
   webpack-virtual-modules@0.6.2:
     resolution: {integrity: sha512-66/V2i5hQanC51vBQKPH4aI8NMAcBW59FVBs+rC7eGHupMyfn34q7rZIE+ETlJ+XTevqfUhVVBgSUNSW2flEUQ==}
+
+  ws@8.22.2:
+    resolution: {integrity: sha512-/rEZ2ejown2N5gxVTHUu9bVVC7ttu0/Tgzf5hbTOixR3Fs7mbbXgn2DbdbcKgJOmpQMtrIUWivtYuVMnp/W/yA==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
 
   xmlbuilder2@4.0.3:
     resolution: {integrity: sha512-bx8Q1STctnNaaDymWnkfQLKofs0mGNN7rLLapJlGuV3VlvegD7Ls4ggMjE3aUSWItCCzU0PEv45lI87iSigiCA==}
@@ -1411,13 +1485,32 @@ snapshots:
 
   '@cfworker/json-schema@4.1.6': {}
 
-  '@effect/ai-anthropic@4.0.5(effect@4.0.5)':
+  '@effect/ai-anthropic@4.0.5(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)':
     dependencies:
-      effect: 4.0.5
+      effect: link:../effect-agent-harness/packages/effect-agent-harness/node_modules/effect
 
-  '@effect/sql-pg@4.0.5(effect@4.0.5)':
+  '@effect/platform-node-shared@4.0.5(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)':
     dependencies:
-      effect: 4.0.5
+      '@types/ws': 8.18.2
+      effect: link:../effect-agent-harness/packages/effect-agent-harness/node_modules/effect
+      ws: 8.22.2
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@effect/platform-node@4.0.5(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)(redis@6.3.1)':
+    dependencies:
+      '@effect/platform-node-shared': 4.0.5(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)
+      effect: link:../effect-agent-harness/packages/effect-agent-harness/node_modules/effect
+      redis: 6.3.1
+      undici: 8.12.4
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@effect/sql-pg@4.0.5(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)':
+    dependencies:
+      effect: link:../effect-agent-harness/packages/effect-agent-harness/node_modules/effect
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
@@ -1570,6 +1663,24 @@ snapshots:
 
   '@oxlint/binding-win32-x64-msvc@1.92.0':
     optional: true
+
+  '@redis/bloom@6.3.1(@redis/client@6.3.1)':
+    dependencies:
+      '@redis/client': 6.3.1
+
+  '@redis/client@6.3.1': {}
+
+  '@redis/json@6.3.1(@redis/client@6.3.1)':
+    dependencies:
+      '@redis/client': 6.3.1
+
+  '@redis/search@6.3.1(@redis/client@6.3.1)':
+    dependencies:
+      '@redis/client': 6.3.1
+
+  '@redis/time-series@6.3.1(@redis/client@6.3.1)':
+    dependencies:
+      '@redis/client': 6.3.1
 
   '@rolldown/binding-android-arm-eabi@1.2.16':
     optional: true
@@ -1889,6 +2000,10 @@ snapshots:
     dependencies:
       csstype: 3.2.3
 
+  '@types/ws@8.18.2':
+    dependencies:
+      '@types/node': 26.6.6
+
   '@typescript/typescript-aix-ppc64@7.0.2':
     optional: true
 
@@ -1996,8 +2111,6 @@ snapshots:
   detect-libc@2.1.2: {}
 
   diff@9.0.0: {}
-
-  effect@4.0.5: {}
 
   electron-to-chromium@1.5.478: {}
 
@@ -2166,6 +2279,17 @@ snapshots:
 
   readdirp@5.1.1: {}
 
+  redis@6.3.1:
+    dependencies:
+      '@redis/bloom': 6.3.1(@redis/client@6.3.1)
+      '@redis/client': 6.3.1
+      '@redis/json': 6.3.1(@redis/client@6.3.1)
+      '@redis/search': 6.3.1(@redis/client@6.3.1)
+      '@redis/time-series': 6.3.1(@redis/client@6.3.1)
+    transitivePeerDependencies:
+      - '@node-rs/xxhash'
+      - '@opentelemetry/api'
+
   rolldown@1.2.16:
     dependencies:
       '@oxc-project/types': 0.156.0
@@ -2237,6 +2361,8 @@ snapshots:
 
   undici-types@8.9.0: {}
 
+  undici@8.12.4: {}
+
   unplugin@3.7.0(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)):
     dependencies:
       '@jridgewell/remapping': 2.3.5
@@ -2274,6 +2400,8 @@ snapshots:
       vite: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)
 
   webpack-virtual-modules@0.6.2: {}
+
+  ws@8.22.2: {}
 
   xmlbuilder2@4.0.3:
     dependencies:

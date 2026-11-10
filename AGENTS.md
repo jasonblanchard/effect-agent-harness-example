@@ -10,7 +10,7 @@ The app is a means to an end. What matters most is what building it teaches us a
 
 - **Public interface:** `src/index.ts` in the library, which re-exports `AgUi`, `AgUiSchema`, `Messages`, `Agent`, `Sse`, `Thread`, `History`, `Checkpoint`, `EventLog` and `Runner` as namespaces. Anything else, including `src/internal/`, is private. Don't import it from here.
 - **Library docs:** read its `README.md` and `AGENTS.md` (at both the monorepo root and the package) before relying on behaviour. They record the invariants the library promises.
-- **Separate `effect` copies:** the link means this app and the library each resolve their own physical copy of `effect@4.0.5`. If something behaves as though two identical modules are different, check this first. For example, this app's `Schema` can't encode or decode schemas built by the library, such as `Messages.Entry`. It is a side effect of linking, not a flaw in the API.
+- **One copy of `effect`:** an override in `pnpm-workspace.yaml` points this app at the library's installed `effect`. Keep it: a workflow built by one copy can't be run by an engine from another, and `Schema` fails across copies too. `@effect/platform-node-shared` is pinned for the same reason, because its newest release needs a newer `effect`.
 
 ## Inspect the source, then give feedback
 
@@ -41,7 +41,11 @@ When a workaround is unavoidable, keep it small and add a comment saying what th
 
 ## Layout
 
-- `src/server/chat.server.ts` — the agent definition, model and store layers, and the `/api/chat` routes. Most library usage is here.
+- `src/server/assistant.server.ts` — the agent, its tool handlers and its workflow, shared by both processes.
+- `src/server/chat.server.ts` — the web process's `/api/chat` routes. They start workflows and stream their event logs.
+- `src/server/worker.server.ts` — the worker process, which executes runs and holds the model layer.
+- `src/server/cluster.server.ts` — the workflow engine, as a runner for the worker and a client for the web process.
+- `src/server/event-log.server.ts` — the library's `EventLog` store, on Postgres.
 - `src/server/thread-store.server.ts` — the library's `Thread` store, on Postgres.
 - `src/server/database.server.ts` — the connection pool and the list of migrations, which run when the layer is built.
 - `src/server/migrations/` — one file per migration. Register new ones in `database.server.ts`.
@@ -54,13 +58,14 @@ When a workaround is unavoidable, keep it small and add a comment saying what th
 
 Use pnpm.
 
-| Command      | What it does                            |
-| ------------ | --------------------------------------- |
-| `pnpm dev`   | Dev server on port 3001, loading `.env` |
-| `pnpm build` | Production build                        |
-| `pnpm tsc`   | Typecheck                               |
+| Command       | What it does                            |
+| ------------- | --------------------------------------- |
+| `pnpm dev`    | Dev server on port 3001, loading `.env` |
+| `pnpm worker` | Workflow worker, loading `.env`         |
+| `pnpm build`  | Production build                        |
+| `pnpm tsc`    | Typecheck                               |
 
-`devenv up` runs the web process and Postgres together. It's defined in `flake.nix` and available in the shell that direnv loads. Postgres listens on `127.0.0.1:5432` with a database named `effect_agent_harness_example`.
+`devenv up` runs the web process, the worker and Postgres together. It's defined in `flake.nix` and available in the shell that direnv loads. Postgres listens on `127.0.0.1:5432` with a database named `effect_agent_harness_example`. A run only makes progress while a worker is running, and it resumes from Postgres after one restarts.
 
 `pnpm lint` works. `pnpm format` and `pnpm format:check` currently fail because their `-c` flag has no path, so run `pnpm exec oxfmt -c .oxfmtrc.json` instead.
 

@@ -2,6 +2,7 @@ import { PgClient } from "@effect/sql-pg";
 import { Config, Layer } from "effect";
 import { Migrator } from "effect/sql";
 import createThreads from "./migrations/0001_create_threads.ts";
+import createRunEvents from "./migrations/0002_create_run_events.ts";
 
 const ClientLayer = PgClient.layerConfig({
   url: Config.Redacted("DATABASE_URL"),
@@ -11,6 +12,7 @@ const ClientLayer = PgClient.layerConfig({
 const runMigrations = Migrator.make({})({
   loader: Migrator.fromRecord({
     "0001_create_threads": createThreads,
+    "0002_create_run_events": createRunEvents,
   }),
 });
 

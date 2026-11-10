@@ -1,19 +1,10 @@
 import { PgClient } from "@effect/sql-pg";
 import { Effect, Layer, Schema } from "effect";
-import { Prompt } from "effect/ai";
 import { SqlSchema } from "effect/sql";
-import { Thread } from "effect-agent-harness";
+import { Messages, Thread } from "effect-agent-harness";
 import { DatabaseLayer } from "./database.server.ts";
 
-// The shape of `Messages.Entry`, rebuilt here because the linked library has its
-// own copy of `effect`, and this copy's `Schema` fails on schemas built by that one.
-const EntryJson = Schema.toCodecJson(
-  Schema.Struct({
-    id: Schema.String,
-    message: Prompt.Message,
-    runId: Schema.optional(Schema.String),
-  }),
-);
+const EntryJson = Schema.toCodecJson(Messages.Entry);
 const encodeEntries = Schema.encodeEffect(Schema.Array(EntryJson));
 
 const toThreadError = (cause: unknown) => new Thread.ThreadError({ cause });

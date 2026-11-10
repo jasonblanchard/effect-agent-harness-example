@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node --env-file-if-exists=.env node_modules/vite/bin/vite.js dev --port 3001",
+    "worker": "node --env-file-if-exists=.env src/server/worker.server.ts",
     "build": "vite build",
     "tsc": "tsc",
     "lint": "oxlint --deny-warnings",
@@ -13,6 +14,7 @@
   },
   "dependencies": {
     "@effect/ai-anthropic": "4.0.5",
+    "@effect/platform-node": "4.0.5",
     "@effect/sql-pg": "4.0.5",
     "@tanstack/ai": "^1.0.0",
     "@tanstack/ai-react": "^1.0.0",

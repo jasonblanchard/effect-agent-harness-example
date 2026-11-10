@@ -49,6 +49,7 @@
                 env.DATABASE_URL = "postgres://127.0.0.1:5432/effect_agent_harness_example";
 
                 processes.web.exec = "pnpm dev";
+                processes.worker.exec = "pnpm worker";
               }
             ];
           };
