@@ -1,0 +1,3 @@
+overrides:
+  effect-agent-harness: link:../effect-agent-harness/packages/effect-agent-harness
+  effect-agent-harness-monorepo: link:../effect-agent-harness
