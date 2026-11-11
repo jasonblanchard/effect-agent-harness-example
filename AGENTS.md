@@ -46,7 +46,7 @@ When a workaround is unavoidable, keep it small and add a comment saying what th
 - `src/server/worker.server.ts` — the worker process, which executes runs and holds the model layer.
 - `src/server/auth.server.ts` — fake authentication: the `CurrentUser` run context and the middleware that provides it to each request.
 - `src/server/cluster.server.ts` — the workflow engine, as a runner for the worker and a client for the web process.
-- `src/server/event-log.server.ts` — the library's `EventLog` store, on Postgres.
+- `src/server/event-log.server.ts` — the library's `EventLog` store, on [Durable Streams](https://electric.ax/docs/streams/): one JSON stream per run. Its header comment explains how it gives each event a cursor.
 - `src/server/thread-store.server.ts` — the library's `Thread` store, on Postgres.
 - `src/server/database.server.ts` — the connection pool and the list of migrations, which run when the layer is built.
 - `src/server/migrations/` — one file per migration. Register new ones in `database.server.ts`.
@@ -54,6 +54,7 @@ When a workaround is unavoidable, keep it small and add a comment saying what th
 - `src/routes/index.tsx` — the chat page.
 - `src/tools/` — tool definitions and handlers. `browser-time.tool.ts` is the browser-side one.
 - `src/routeTree.gen.ts` — generated. Don't edit it.
+- `scripts/durable-streams.ts` — a local Durable Streams server, the protocol's Node reference server with its data in `.durable-streams/`.
 
 ## Commands
 
@@ -66,11 +67,11 @@ Use pnpm.
 | `pnpm build`  | Production build                        |
 | `pnpm tsc`    | Typecheck                               |
 
-`devenv up` runs the web process, the worker and Postgres together. It's defined in `flake.nix` and available in the shell that direnv loads. Postgres listens on `127.0.0.1:5432` with a database named `effect_agent_harness_example`. A run only makes progress while a worker is running, and it resumes from Postgres after one restarts.
+`devenv up` runs the web process, the worker, the Durable Streams server and Postgres together. It's defined in `flake.nix` and available in the shell that direnv loads. Postgres listens on `127.0.0.1:5432` with a database named `effect_agent_harness_example`. Postgres holds threads and the workflow engine's state, and Durable Streams holds each run's events. A run only makes progress while a worker is running, and it resumes from Postgres after one restarts.
 
 `pnpm lint` works. `pnpm format` and `pnpm format:check` currently fail because their `-c` flag has no path, so run `pnpm exec oxfmt -c .oxfmtrc.json` instead.
 
-The server needs `ANTHROPIC_API_KEY` in `.env`, and `DATABASE_URL`, which the flake's shell sets. Don't print or commit `.env`.
+The server needs `ANTHROPIC_API_KEY` in `.env`, and `DATABASE_URL` and `DURABLE_STREAMS_URL`, which the flake's shell sets. Don't print or commit `.env`.
 
 ## Conventions
 

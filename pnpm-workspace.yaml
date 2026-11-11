@@ -6,3 +6,7 @@ overrides:
   # One physical copy of `effect` for the app and the linked library, because a
   # workflow built by one copy can't be run by an engine from the other.
   effect: link:../effect-agent-harness/packages/effect-agent-harness/node_modules/effect
+# Durable Streams' dev server: these ship prebuilt binaries, so their build scripts aren't needed.
+allowBuilds:
+  lmdb: false
+  msgpackr-extract: false

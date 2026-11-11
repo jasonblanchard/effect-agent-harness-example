@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node --env-file-if-exists=.env node_modules/vite/bin/vite.js dev --port 3001",
     "worker": "node --env-file-if-exists=.env src/server/worker.server.ts",
+    "streams": "node scripts/durable-streams.ts",
     "build": "vite build",
     "tsc": "tsc",
     "lint": "oxlint --deny-warnings",
@@ -13,6 +14,7 @@
     "format:check": "oxfmt -c --check"
   },
   "dependencies": {
+    "@durable-streams/server": "0.3.9",
     "@effect/ai-anthropic": "4.0.5",
     "@effect/platform-node": "4.0.5",
     "@effect/sql-pg": "4.0.5",

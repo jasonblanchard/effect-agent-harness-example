@@ -162,3 +162,127 @@ export const AssistantWorkflow = Runner.makeWorkflow(assistant, {
 
 - It's one more option on a runner where the client history is rarely wanted. Making it required would break existing callers.
 - The library already says a workflow's history can't vary per run, so an option matches how it behaves. `makeAttached` and `makeDetached` would still read theirs from context, which makes the runners less uniform.
+
+## Durable Streams event log
+
+Suggestions 8 to 11 come from storing the `EventLog` on [Durable Streams](https://electric.ax/docs/streams/) (Electric Streams), on the `electric-streams` branch. The store is `src/server/event-log.server.ts`. Line numbers are from 2026-11-10.
+
+## 8. Derive a store's cursors from an offset log
+
+**What we were trying to do:** store each run's AG-UI events in one Durable Stream, and serve `read` and `subscribe` from it. See `toStored` and `checkCursor` at `src/server/event-log.server.ts:51` and `:127` here, and the contract at `src/EventLog.ts:7` in the library.
+
+**Why it's awkward:** `EventLog` requires a cursor for every event, but append-only logs, including Durable Streams, Kafka-style logs and S2, give one offset per response, not per message. To bridge the gap, the store:
+
+- records `prev`, the stream's offset when it was appended, in each message. An event's cursor is the next message's `prev`, or the response's `Stream-Next-Offset` for the last event in the response.
+- sends `prev` as `Stream-Seq`, which works as compare-and-set, so a second writer can't record a wrong `prev`.
+- checks cursors itself, because the server accepts any well-formed offset, including one inside a message. At the tail, the check needs an extra read to tell a real cursor from the stream's initial offset.
+- builds `subscribe` from a catch-up read and a long-poll loop that ends on close or on the terminal event.
+
+That is about two thirds of the file, and none of it is specific to this app. The README invites consumers to bring their own durable stream, so each of them would write it again.
+
+**Proposal:** a builder that derives the whole `EventLog` from a few offset-log operations.
+
+```ts
+export const EventLogStoreLayer = Layer.effect(
+  EventLog.EventLog,
+  EventLog.fromOffsetLog({
+    // `prev` is the offset before this append, to store with the event and to guard concurrent writers.
+    append: (key, message, { prev, terminal }) => Effect<{ next: string }, EventLogError>,
+    // One page from `offset`, waiting at the tail when `live`. `None` if the run has no log.
+    readFrom: (key, offset, { live }) =>
+      Effect<
+        Option<{ messages: ReadonlyArray<Message>; next: string; closed: boolean }>,
+        EventLogError
+      >,
+    create: (key) => Effect<void, EventLogError>,
+  }),
+);
+```
+
+The library would then own cursor derivation and validation, history-then-live delivery, and completion on the terminal event.
+
+**Trade-offs:**
+
+- The library commits to one scheme (`prev` in each message) and to a message envelope that stores must persist.
+- A store with no compare-and-set like `Stream-Seq` can't guard concurrent writers this way. The builder would have to say so.
+- The `EventLog` interface doesn't change, so `layerMemory` and the Postgres store are unaffected.
+
+## 9. A shared test suite for custom `EventLog` stores
+
+**What we were trying to do:** check that the Durable Streams store keeps the `EventLog` contract. The library's only tests are in `test/EventLog.test.ts`, and they're written against `layerMemory`.
+
+**Why it's awkward:** we ported them by hand into a throwaway script. Some assume decimal cursors (`"0"`, `"2"`), and all share fixed ids (`t1`/`r1`), which a persistent store can't reuse between runs. The README states the invariants (`README.md:741`), but a store has nothing executable to check itself against. This is the `EventLog` side of suggestion 5.
+
+**Proposal:** export the suite, parameterised by the store's layer.
+
+```ts
+import { eventLogConformance } from "effect-agent-harness/testing";
+
+eventLogConformance(EventLogStoreLayer, {
+  // Fresh ids per test, for stores that persist between runs.
+  freshRun: () => ({ threadId: crypto.randomUUID(), runId: "r1" }),
+});
+```
+
+It should:
+
+- compare cursors only by equality and by append order, never by format.
+- include well-formed cursors that were never issued.
+- include a second writer racing the first, which our port added.
+
+**Trade-offs:**
+
+- It adds a public entry point. It would also tie the library to `@effect/vitest`, unless the cases are exported as plain effects for the consumer to register.
+- Changes to the suite become semver-relevant.
+
+## 10. Export a schema for the `AgUi.Event` union
+
+**What we were trying to do:** read stored events back from Durable Streams. See `src/server/event-log.server.ts:108` here, and `src/AgUi.ts:130` in the library.
+
+**Why it's awkward:** `AgUiSchema` has a schema for each event but none for the union, and `AgUi.Event` is only a type. So a store can't decode what it reads back, and casts (`as unknown as ReadonlyArray<Message>`). The Postgres store casts too. Data from an external HTTP service is where validation matters most.
+
+**Proposal:** generate the union alongside its members.
+
+```ts
+const Message = Schema.Struct({ prev: Schema.NullOr(Schema.String), event: AgUiSchema.Event });
+const messages = yield * Schema.decodeUnknownEffect(Schema.Array(Message))(yield * response.json);
+```
+
+**Trade-offs:**
+
+- `AgUiSchema.ts` is generated, so this is a change to `scripts/generate-schema.ts`.
+- Decoding costs some CPU on every read. Stores that trust their own writes can keep skipping it.
+
+## 11. Make appends idempotent across step replays
+
+**What we were trying to do:** behave correctly when a worker crashes mid-run and another replays the step. See `src/server/event-log.server.ts:193` here, and `src/EventLog.ts:77` in the library.
+
+**Why it's awkward:** two behaviours the store relies on are visible only in the source:
+
+- A replayed step appends its events again, so the Postgres store stores duplicates.
+- Nothing is appended after the terminal event. Only a comment inside `layerMemory` says so, not the `EventLog` interface.
+
+Relying on the second, our store closes the stream with the terminal event and drops later appends. That removes duplicates only for the run's final step. For earlier steps, the store can't tell a replayed event from a new one.
+
+**Proposal:** document both behaviours on `EventLog.append`, and give each append a key that stays the same across replays.
+
+```ts
+readonly append: (
+  threadId: string,
+  runId: string,
+  event: AgUi.Event,
+  options: { readonly key: string }, // e.g. `${stepIndex}:${eventIndex}`, the same on replay
+) => Effect.Effect<Stored, EventLogError>;
+```
+
+A Durable Streams store could map the key onto its idempotent producer (`Producer-Id`, `Producer-Epoch` and `Producer-Seq`). A SQL store could use a unique index. Either way, every step would get exactly-once appends.
+
+**Trade-offs:**
+
+- It widens `append`. Making the key optional keeps existing stores compiling, and they can ignore it.
+- The `Runner` must derive keys that are deterministic across replays, which depends on how it numbers steps and the events within them.
+
+## Not the library's
+
+- **`@durable-streams/server` 0.3.9:** a long-poll woken by an append that also closes the stream (`Stream-Closed: true` with a body) answers `204` with `Stream-Closed: true`, an unchanged `Stream-Next-Offset`, and no data. The protocol says the response should carry the appended data. This is worth reporting upstream. Workaround: `src/server/event-log.server.ts:257`.
+- **pnpm 12:** it refuses to install `@durable-streams/server` until the build scripts of `lmdb` and `msgpackr-extract` are allowed or denied. Their prebuilt binaries work, so `pnpm-workspace.yaml` denies the scripts with `allowBuilds`.

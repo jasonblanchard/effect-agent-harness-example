@@ -48,6 +48,10 @@
                 # No credentials: devenv's Postgres trusts local connections, and the driver defaults to $USER.
                 env.DATABASE_URL = "postgres://127.0.0.1:5432/effect_agent_harness_example";
 
+                # Run events go to Durable Streams, served by `pnpm streams` with its data in .durable-streams.
+                env.DURABLE_STREAMS_URL = "http://127.0.0.1:4437/v1/stream";
+
+                processes.streams.exec = "pnpm streams";
                 processes.web.exec = "pnpm dev";
                 processes.worker.exec = "pnpm worker";
               }
