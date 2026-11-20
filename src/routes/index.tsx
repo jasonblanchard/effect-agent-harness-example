@@ -33,7 +33,11 @@ function ChatThread({ threadId }: { readonly threadId: string }) {
   const { messages, sendMessage, isLoading, error, stop, interrupts, resumeInterruptsUnsafe } =
     useChat({
       // The URL carries the thread id because the request to join a run doesn't add it.
-      connection: fetchServerSentEvents(`/api/chat?threadId=${encodeURIComponent(threadId)}`),
+      // With `cancelUrl`, `stop()` also posts the run's ids there, which cancels the
+      // workflow run; aborting the stream alone wouldn't reach the worker.
+      connection: fetchServerSentEvents(`/api/chat?threadId=${encodeURIComponent(threadId)}`, {
+        cancelUrl: "/api/chat/cancel",
+      }),
       threadId,
       persistence: true,
       tools: [getBrowserTime],
@@ -121,8 +125,9 @@ function ChatThread({ threadId }: { readonly threadId: string }) {
           aria-label="Message"
           autoFocus
         />
+        {/* The thread is busy until the run ends, so a streaming run offers Stop instead of Send. */}
         {isLoading ? (
-          <button type="button" onClick={stop}>
+          <button type="button" className="secondary" onClick={stop}>
             Stop
           </button>
         ) : (

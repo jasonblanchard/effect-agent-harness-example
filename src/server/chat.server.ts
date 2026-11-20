@@ -19,6 +19,9 @@ const ResumeHeaders = Schema.Struct({
   "last-event-id": Schema.optional(Schema.String),
 });
 
+/** What TanStack AI's `stop()` posts to `cancelUrl`. */
+const CancelBody = Schema.Struct({ threadId: Schema.String, runId: Schema.String });
+
 /** How long a run's event stream stays open with nothing new. Longer than the slowest model or tool step. */
 const IDLE_TIMEOUT = "2 minutes";
 
@@ -88,11 +91,11 @@ const ChatRoutes = HttpRouter.use((router) =>
     // POST /api/chat: TanStack AI's `fetchServerSentEvents` posts an AG-UI
     // `RunAgentInput` and reads the AG-UI events back as SSE. The worker executes
     // the run and this response only follows its event log, so a disconnect (a
-    // reload, or the client's `stop()`) ends the response and the run carries
-    // on. A run that stops for an approval is answered by the next run's
-    // `resume` entries. The frames carry cursors, so after a dropped connection
-    // the client sends the same request again with `Last-Event-ID`. Starting
-    // that run again joins its existing execution.
+    // reload, or a closed tab) ends the response and the run carries on: only
+    // the cancel route below stops it. A run that stops for an approval is
+    // answered by the next run's `resume` entries. The frames carry cursors, so
+    // after a dropped connection the client sends the same request again with
+    // `Last-Event-ID`. Starting that run again joins its existing execution.
     yield* router.add(
       "POST",
       "/api/chat",
@@ -103,6 +106,33 @@ const ChatRoutes = HttpRouter.use((router) =>
 
         yield* AssistantWorkflow.start(input);
         return yield* follow(input.threadId, input.runId, lastEventId);
+      }).pipe(
+        Effect.catch((error) =>
+          Effect.succeed(
+            HttpServerResponse.text(`Invalid request: ${error.message}`, {
+              status: 400,
+            }),
+          ),
+        ),
+      ),
+    );
+
+    // POST /api/chat/cancel: the page's Stop button. TanStack AI's `stop()`
+    // aborts its own stream and posts the run's ids here (`cancelUrl`). The
+    // cancel is held by the workflow engine, so it reaches the run on whichever
+    // worker executes it, even one that hasn't started it yet or resumes it
+    // after a crash. The run ends with `RUN_FINISHED` outcome `cancelled`, its
+    // partial reply is committed, and the thread is free for the next message.
+    // It returns at once, and cancelling a run that has ended does nothing.
+    // The auth middleware runs, but nothing checks that the thread is the
+    // user's: the thread store doesn't record an owner.
+    yield* router.add(
+      "POST",
+      "/api/chat/cancel",
+      Effect.gen(function* () {
+        const run = yield* HttpServerRequest.schemaBodyJson(CancelBody);
+        yield* AssistantWorkflow.cancel(run);
+        return HttpServerResponse.empty({ status: 204 });
       }).pipe(
         Effect.catch((error) =>
           Effect.succeed(

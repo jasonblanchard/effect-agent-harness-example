@@ -10,3 +10,8 @@ overrides:
 allowBuilds:
   lmdb: false
   msgpackr-extract: false
+minimumReleaseAgeExclude:
+  - "@tanstack/ai-client@1.2.0"
+  - "@tanstack/ai-event-client@1.1.0"
+  - "@tanstack/ai-react@1.1.0"
+  - "@tanstack/ai@1.7.0"
