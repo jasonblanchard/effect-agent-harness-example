@@ -7,7 +7,7 @@ settings:
 overrides:
   effect-agent-harness: link:../effect-agent-harness/packages/effect-agent-harness
   effect-agent-harness-monorepo: link:../effect-agent-harness
-  '@effect/platform-node-shared': 4.0.5
+  '@effect/platform-node-shared': 4.1.4
   effect: link:../effect-agent-harness/packages/effect-agent-harness/node_modules/effect
 
 importers:
@@ -18,14 +18,14 @@ importers:
         specifier: 0.3.9
         version: 0.3.9
       '@effect/ai-anthropic':
-        specifier: 4.0.5
-        version: 4.0.5(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)
+        specifier: 4.1.4
+        version: 4.1.4(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)
       '@effect/platform-node':
-        specifier: 4.0.5
-        version: 4.0.5(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)(redis@6.3.1)
+        specifier: 4.1.4
+        version: 4.1.4(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)(redis@6.3.1)
       '@effect/sql-pg':
-        specifier: 4.0.5
-        version: 4.0.5(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)
+        specifier: 4.1.4
+        version: 4.1.4(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)
       '@tanstack/ai':
         specifier: ^1.7.0
         version: 1.7.0(zod@4.6.7)
@@ -175,28 +175,28 @@ packages:
       '@tanstack/db':
         optional: true
 
-  '@effect/ai-anthropic@4.0.5':
-    resolution: {integrity: sha512-Vb8pEJrwqeRd3UT0BtOM2IHlLgRp32XunUnWfEd/DpV0jyKgZHSKVVxsDs6AsMyZpRsD1klDtvfCndDiQV4TyQ==}
+  '@effect/ai-anthropic@4.1.4':
+    resolution: {integrity: sha512-VDcsyL3k76HhF7YqH8z0gQ0bUybX4ti5RHv3JadDXZvEgNpvUT3p4YBssvKR2HAGa7NXr9yfmFedRilhQM7tdQ==}
     peerDependencies:
-      effect: ^4.0.5
+      effect: ^4.1.4
 
-  '@effect/platform-node-shared@4.0.5':
-    resolution: {integrity: sha512-a8rCdEkfZBGe9C6bsIjxVZuRp73svIyK5IHwHdDAVsvZXjrbkxusfI+rZ8WlX31RP1mKizwI/E72GQTNfdMWHw==}
-    engines: {node: '>=18.0.0'}
+  '@effect/platform-node-shared@4.1.4':
+    resolution: {integrity: sha512-DWdfphHGOFJNj/mYadgpT3jIm8aRXDcPrQiGXFBH4p2H4XmA7iYMrPsI8NxVgZ7kNX0q1+FGJZJama0tINHRAg==}
+    engines: {node: '>=22.19.0'}
     peerDependencies:
-      effect: ^4.0.5
+      effect: ^4.1.4
 
-  '@effect/platform-node@4.0.5':
-    resolution: {integrity: sha512-v4KD5fWvEUa4QmWFpZFbBsRhmfnTP6ETCME2r9ifyXVDPjhfpxpTZl41prjgQFMqZBHdWWCl7YC5ImbXv5ui5g==}
-    engines: {node: '>=18.0.0'}
+  '@effect/platform-node@4.1.4':
+    resolution: {integrity: sha512-h7QExTPq/RfYtHP/8tMlgfBvqYsuJKhxfkU6w0+NaF/ihqQ8Y3GH9t28ltupQjoqMM7P6W5gy8rOji7F0qVrmg==}
+    engines: {node: '>=22.19.0'}
     peerDependencies:
-      effect: ^4.0.5
-      redis: '>=5.0.0 <7.0.0'
+      effect: ^4.1.4
+      redis: '>=5.1.0 <7.0.0'
 
-  '@effect/sql-pg@4.0.5':
-    resolution: {integrity: sha512-F9tG76H+aryhYcp5pvgd+MwWrNltv3XAuLcZSBsOOX6q+PEl+IM4zkQKzx0TF9OsEMH/SQ+3gZRdYWOsDF+vJQ==}
+  '@effect/sql-pg@4.1.4':
+    resolution: {integrity: sha512-DHsmpIfJeCYiJVk3JwMQFAWaQAmKV/elUbBCjHFP7qeZtJ8dViUV/y/AHdUaZ+OmMwtr8J7ZXA7AlsKZ9hPiQA==}
     peerDependencies:
-      effect: ^4.0.5
+      effect: ^4.1.4
 
   '@harperfast/extended-iterable@1.0.5':
     resolution: {integrity: sha512-4ScXlphaKEa49RpHmqwATq9QI9aUTdWVYDlJkzxhsD7ShJP+pHCYLznMO9n/wREY8jPjRZ59wLJY6HM5yB5Gkw==}
@@ -1624,11 +1624,11 @@ snapshots:
       '@durable-streams/client': 0.2.7
       '@standard-schema/spec': 1.1.0
 
-  '@effect/ai-anthropic@4.0.5(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)':
+  '@effect/ai-anthropic@4.1.4(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)':
     dependencies:
       effect: link:../effect-agent-harness/packages/effect-agent-harness/node_modules/effect
 
-  '@effect/platform-node-shared@4.0.5(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)':
+  '@effect/platform-node-shared@4.1.4(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)':
     dependencies:
       '@types/ws': 8.18.2
       effect: link:../effect-agent-harness/packages/effect-agent-harness/node_modules/effect
@@ -1637,9 +1637,9 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@effect/platform-node@4.0.5(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)(redis@6.3.1)':
+  '@effect/platform-node@4.1.4(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)(redis@6.3.1)':
     dependencies:
-      '@effect/platform-node-shared': 4.0.5(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)
+      '@effect/platform-node-shared': 4.1.4(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)
       effect: link:../effect-agent-harness/packages/effect-agent-harness/node_modules/effect
       redis: 6.3.1
       undici: 8.12.4
@@ -1647,7 +1647,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@effect/sql-pg@4.0.5(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)':
+  '@effect/sql-pg@4.1.4(effect@effect-agent-harness+packages+effect-agent-harness+node_modules+effect)':
     dependencies:
       effect: link:../effect-agent-harness/packages/effect-agent-harness/node_modules/effect
 

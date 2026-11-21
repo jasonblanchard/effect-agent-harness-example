@@ -8,7 +8,7 @@ The app is a means to an end. What matters most is what building it teaches us a
 
 `effect-agent-harness` is linked from the sibling checkout at `../effect-agent-harness/packages/effect-agent-harness`, through `link:` entries in `package.json` and `pnpm-workspace.yaml`. Its `exports` point at `src/index.ts`, so library edits show up here without a build.
 
-- **Public interface:** `src/index.ts` in the library, which re-exports `AgUi`, `AgUiSchema`, `Messages`, `Agent`, `Sse`, `Thread`, `History`, `Checkpoint`, `EventLog` and `Runner` as namespaces. Anything else, including `src/internal/`, is private. Don't import it from here.
+- **Public interface:** `src/index.ts` in the library, which re-exports `AgUi`, `Messages`, `Agent`, `Thread`, `History`, `Checkpoint`, `EventLog`, `Runner` and `Telemetry` as namespaces. Anything else, including `src/internal/`, is private. Don't import it from here. The library has no HTTP code: the AG-UI protocol schemas (`AgUiSchema`) come from `effect/ai`, and the routes are built here with `effect/http-api`.
 - **Library docs:** read its `README.md` and `AGENTS.md` (at both the monorepo root and the package) before relying on behaviour. They record the invariants the library promises.
 - **One copy of `effect`:** an override in `pnpm-workspace.yaml` points this app at the library's installed `effect`. Keep it: a workflow built by one copy can't be run by an engine from another, and `Schema` fails across copies too. `@effect/platform-node-shared` is pinned for the same reason, because its newest release needs a newer `effect`.
 
@@ -42,9 +42,9 @@ When a workaround is unavoidable, keep it small and add a comment saying what th
 ## Layout
 
 - `src/server/assistant.server.ts` — the agent, its tool handlers and its workflow, shared by both processes.
-- `src/server/chat.server.ts` — the web process's `/api/chat` routes. They start workflows and stream their event logs.
+- `src/server/chat.server.ts` — the web process's `/api/chat` routes, as an `HttpApi` (`ChatApi`). They start workflows and stream their event logs.
 - `src/server/worker.server.ts` — the worker process, which executes runs and holds the model layer.
-- `src/server/auth.server.ts` — fake authentication: the `CurrentUser` run context and the middleware that provides it to each request.
+- `src/server/auth.server.ts` — fake authentication: the `CurrentUser` run context and the `HttpApiMiddleware` (`Authentication`) that provides it to each request.
 - `src/server/cluster.server.ts` — the workflow engine, as a runner for the worker and a client for the web process.
 - `src/server/event-log.server.ts` — the library's `EventLog` store, on [Durable Streams](https://electric.ax/docs/streams/): one JSON stream per run. Its header comment explains how it gives each event a cursor.
 - `src/server/thread-store.server.ts` — the library's `Thread` store, on Postgres.
