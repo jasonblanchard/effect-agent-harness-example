@@ -48,7 +48,17 @@
                 # No credentials: devenv's Postgres trusts local connections, and the driver defaults to $USER.
                 env.DATABASE_URL = "postgres://127.0.0.1:5432/effect_agent_harness_example";
 
-                # Run events go to Durable Streams, served by `pnpm streams` with its data in .durable-streams.
+                # Where run events go: `redis` or `durable-streams`. Both stores run, so switching needs only this.
+                env.EVENT_LOG_STORE = "redis";
+
+                # With the append-only file, run events survive a restart.
+                services.redis = {
+                  enable = true;
+                  extraConfig = "appendonly yes";
+                };
+                env.REDIS_URL = "redis://127.0.0.1:6379";
+
+                # Durable Streams, served by `pnpm streams` with its data in .durable-streams.
                 env.DURABLE_STREAMS_URL = "http://127.0.0.1:4437/v1/stream";
 
                 processes.streams.exec = "pnpm streams";

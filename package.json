@@ -27,7 +27,8 @@
     "oxfmt": "^0.77.0",
     "oxlint": "^1.92.0",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "redis": "^6.3.1"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
