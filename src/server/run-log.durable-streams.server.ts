@@ -1,10 +1,11 @@
 import { Config, Data, Effect, Layer, Option, Stream } from "effect";
 import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/http";
 import type { HttpClientResponse } from "effect/http";
-import { AgUi, EventLog } from "effect-agent-harness";
+import type { AgUiSchema } from "effect/ai";
+import { Agent, RunLog } from "effect-agent-harness";
 
 /**
- * The `EventLog` on Durable Streams (https://electric.ax/docs/streams/), shared
+ * The `RunLog` on Durable Streams (https://electric.ax/docs/streams/), shared
  * between the worker that appends and the web process that streams.
  *
  * Each run is one JSON stream. Durable Streams gives an offset per *response*,
@@ -25,7 +26,7 @@ import { AgUi, EventLog } from "effect-agent-harness";
 interface Message {
   /** The stream's offset before this message, or `null` for the run's first event. */
   readonly prev: string | null;
-  readonly event: AgUi.Event;
+  readonly event: AgUiSchema.Event;
 }
 
 /** One response of a read. */
@@ -45,11 +46,11 @@ class UnexpectedResponse extends Data.TaggedError("UnexpectedResponse")<{
   readonly url: string;
 }> {}
 
-const toEventLogError = (cause: unknown) =>
-  new EventLog.EventLogError({ cause });
+const toRunLogError = (cause: unknown) =>
+  new RunLog.RunLogError({ cause });
 
 /** Each event with its cursor: the offset after it. */
-const toStored = (page: Page): Array<EventLog.Stored> =>
+const toStored = (page: Page): Array<RunLog.Stored> =>
   page.messages.map((message, index) => ({
     cursor: page.messages[index + 1]?.prev ?? page.next,
     event: message.event,
@@ -58,8 +59,8 @@ const toStored = (page: Page): Array<EventLog.Stored> =>
 /** How many times `append` re-reads the tail after losing a race. */
 const APPEND_ATTEMPTS = 3;
 
-export const EventLogStoreLayer = Layer.effect(
-  EventLog.EventLog,
+export const RunLogStoreLayer = Layer.effect(
+  RunLog.RunLog,
   Effect.gen(function* () {
     const baseUrl = yield* Config.String("DURABLE_STREAMS_URL");
     const client = yield* HttpClient.HttpClient;
@@ -107,7 +108,7 @@ export const EventLogStoreLayer = Layer.effect(
         }
         if (response.status === 400) {
           // Durable Streams' answer to a malformed offset.
-          return yield* new EventLog.InvalidCursor({ cursor: offset });
+          return yield* new RunLog.InvalidCursor({ cursor: offset });
         }
         if (response.status !== 200 && response.status !== 204) {
           return yield* unexpected(response);
@@ -117,8 +118,7 @@ export const EventLogStoreLayer = Layer.effect(
           return yield* unexpected(response);
         }
         return Option.some<Page>({
-          // Written only by `append`, as a `Message`. Not decoded: the library has
-          // no schema for the `AgUi.Event` union, only for each event.
+          // Written only by `append`, as a `Message`, so not decoded.
           messages:
             response.status === 200
               ? ((yield* response.json) as unknown as ReadonlyArray<Message>)
@@ -148,7 +148,7 @@ export const EventLogStoreLayer = Layer.effect(
                 (page) => page.messages.length > 0,
               );
         if (!issued) {
-          return yield* new EventLog.InvalidCursor({ cursor: after });
+          return yield* new RunLog.InvalidCursor({ cursor: after });
         }
       });
 
@@ -159,7 +159,7 @@ export const EventLogStoreLayer = Layer.effect(
         if (Option.isNone(first)) {
           return after === undefined
             ? Option.none<Page>()
-            : yield* new EventLog.InvalidCursor({ cursor: after });
+            : yield* new RunLog.InvalidCursor({ cursor: after });
         }
         if (after !== undefined) {
           yield* checkCursor(url, after, first.value);
@@ -209,7 +209,7 @@ export const EventLogStoreLayer = Layer.effect(
         };
       });
 
-    const appendOnce = (url: string, event: AgUi.Event) =>
+    const appendOnce = (url: string, event: AgUiSchema.Event) =>
       Effect.gen(function* () {
         const { prev, first, closed } = yield* position(url);
         if (closed) {
@@ -217,7 +217,7 @@ export const EventLogStoreLayer = Layer.effect(
           // crash. The run is over, so drop the duplicate; its cursor is the end.
           return { cursor: prev, event };
         }
-        const terminal = AgUi.isTerminal(event);
+        const terminal = Agent.isTerminal(event);
         const message: Message = { prev: first ? null : prev, event };
         const response = yield* client.execute(
           HttpClientRequest.post(url).pipe(
@@ -243,14 +243,14 @@ export const EventLogStoreLayer = Layer.effect(
         return { cursor: next, event };
       });
 
-    return EventLog.EventLog.of({
+    return RunLog.RunLog.of({
       append: (threadId, runId, event) =>
         appendOnce(streamUrl(threadId, runId), event).pipe(
           Effect.retry({
             while: (error) => error._tag === "AppendConflict",
             times: APPEND_ATTEMPTS,
           }),
-          Effect.mapError(toEventLogError),
+          Effect.mapError(toRunLogError),
         ),
 
       read: (threadId, runId, after) =>
@@ -258,7 +258,7 @@ export const EventLogStoreLayer = Layer.effect(
           Effect.map(Option.match({ onNone: () => [], onSome: toStored })),
           Effect.catchIf(
             (error) => error._tag !== "InvalidCursor",
-            (error) => Effect.fail(toEventLogError(error)),
+            (error) => Effect.fail(toRunLogError(error)),
           ),
         ),
 
@@ -307,13 +307,13 @@ export const EventLogStoreLayer = Layer.effect(
           );
           return Stream.concat(history, live).pipe(
             // The stream closes with its terminal event; this ends a run whose close was lost.
-            Stream.takeUntil((stored) => AgUi.isTerminal(stored.event)),
-            Stream.mapError(toEventLogError),
+            Stream.takeUntil((stored) => Agent.isTerminal(stored.event)),
+            Stream.mapError(toRunLogError),
           );
         }).pipe(
           Effect.catchIf(
             (error) => error._tag !== "InvalidCursor",
-            (error) => Effect.fail(toEventLogError(error)),
+            (error) => Effect.fail(toRunLogError(error)),
           ),
         ),
     });

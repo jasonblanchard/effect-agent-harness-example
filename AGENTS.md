@@ -8,7 +8,7 @@ The app is a means to an end. What matters most is what building it teaches us a
 
 `effect-agent-harness` is linked from the sibling checkout at `../effect-agent-harness/packages/effect-agent-harness`, through `link:` entries in `package.json` and `pnpm-workspace.yaml`. Its `exports` point at `src/index.ts`, so library edits show up here without a build.
 
-- **Public interface:** `src/index.ts` in the library, which re-exports `AgUi`, `Messages`, `Agent`, `Thread`, `History`, `Checkpoint`, `EventLog`, `Runner` and `Telemetry` as namespaces. Anything else, including `src/internal/`, is private. Don't import it from here. The library has no HTTP code: the AG-UI protocol schemas (`AgUiSchema`) come from `effect/ai`, and the routes are built here with `effect/http-api`.
+- **Public interface:** `src/index.ts` in the library, which re-exports `Messages`, `Agent`, `Thread`, `History`, `Checkpoint`, `RunLog`, `Runner` and `Telemetry` as namespaces. Anything else, including `src/internal/`, is private. Don't import it from here. The library has no HTTP code: the AG-UI protocol schemas (`AgUiSchema`) come from `effect/ai`, and the routes are built here with `effect/http-api`.
 - **Library docs:** read its `README.md` and `AGENTS.md` (at both the monorepo root and the package) before relying on behaviour. They record the invariants the library promises.
 - **One copy of `effect`:** an override in `pnpm-workspace.yaml` points this app at the library's installed `effect`. Keep it: a workflow built by one copy can't be run by an engine from another, and `Schema` fails across copies too. `@effect/platform-node-shared` is pinned for the same reason, because its newest release needs a newer `effect`.
 
@@ -46,9 +46,9 @@ When a workaround is unavoidable, keep it small and add a comment saying what th
 - `src/server/worker.server.ts` — the worker process, which executes runs and holds the model layer.
 - `src/server/auth.server.ts` — fake authentication: the `CurrentUser` run context and the `HttpApiMiddleware` (`Authentication`) that provides it to each request.
 - `src/server/cluster.server.ts` — the workflow engine, as a runner for the worker and a client for the web process.
-- `src/server/event-log.server.ts` — picks the library's `EventLog` store from `EVENT_LOG_STORE`: `redis` (the default) or `durable-streams`. The web process and the worker must use the same one.
-- `src/server/event-log.redis.server.ts` — the `EventLog` store on Redis Streams: one stream per run, with entry ids as cursors.
-- `src/server/event-log.durable-streams.server.ts` — the `EventLog` store on [Durable Streams](https://electric.ax/docs/streams/): one JSON stream per run. Its header comment explains how it gives each event a cursor.
+- `src/server/run-log.server.ts` — picks the library's `RunLog` store from `RUN_LOG_STORE`: `redis` (the default) or `durable-streams`. The web process and the worker must use the same one.
+- `src/server/run-log.redis.server.ts` — the `RunLog` store on Redis Streams: one stream per run, with entry ids as cursors.
+- `src/server/run-log.durable-streams.server.ts` — the `RunLog` store on [Durable Streams](https://electric.ax/docs/streams/): one JSON stream per run. Its header comment explains how it gives each event a cursor.
 - `src/server/thread-store.server.ts` — the library's `Thread` store, on Postgres.
 - `src/server/database.server.ts` — the connection pool and the list of migrations, which run when the layer is built.
 - `src/server/migrations/` — one file per migration. Register new ones in `database.server.ts`.
@@ -69,11 +69,11 @@ Use pnpm.
 | `pnpm build`  | Production build                        |
 | `pnpm tsc`    | Typecheck                               |
 
-`devenv up` runs the web process, the worker, Redis, the Durable Streams server and Postgres together. It's defined in `flake.nix` and available in the shell that direnv loads. Postgres listens on `127.0.0.1:5432` with a database named `effect_agent_harness_example`. Postgres holds threads and the workflow engine's state, and Redis or Durable Streams holds each run's events, depending on `EVENT_LOG_STORE`. A run only makes progress while a worker is running, and it resumes from Postgres after one restarts.
+`devenv up` runs the web process, the worker, Redis, the Durable Streams server and Postgres together. It's defined in `flake.nix` and available in the shell that direnv loads. Postgres listens on `127.0.0.1:5432` with a database named `effect_agent_harness_example`. Postgres holds threads and the workflow engine's state, and Redis or Durable Streams holds each run's events, depending on `RUN_LOG_STORE`. A run only makes progress while a worker is running, and it resumes from Postgres after one restarts.
 
 `pnpm lint` works. `pnpm format` and `pnpm format:check` currently fail because their `-c` flag has no path, so run `pnpm exec oxfmt -c .oxfmtrc.json` instead.
 
-The server needs `ANTHROPIC_API_KEY` in `.env`, and `DATABASE_URL`, `EVENT_LOG_STORE`, `REDIS_URL` and `DURABLE_STREAMS_URL`, which the flake's shell sets. Don't print or commit `.env`.
+The server needs `ANTHROPIC_API_KEY` in `.env`, and `DATABASE_URL`, `RUN_LOG_STORE`, `REDIS_URL` and `DURABLE_STREAMS_URL`, which the flake's shell sets. Don't print or commit `.env`.
 
 ## Conventions
 

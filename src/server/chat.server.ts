@@ -10,11 +10,11 @@ import {
 } from "effect/http-api";
 import { convertMessagesToModelMessages, modelMessagesToUIMessages } from "@tanstack/ai";
 import type { ModelMessage } from "@tanstack/ai";
-import { EventLog, History } from "effect-agent-harness";
+import { History, RunLog } from "effect-agent-harness";
 import { AssistantWorkflow } from "./assistant.server.ts";
 import { Authentication, AuthenticationLayer } from "./auth.server.ts";
 import { WorkflowClientLayer } from "./cluster.server.ts";
-import { EventLogStoreLayer } from "./event-log.server.ts";
+import { RunLogStoreLayer } from "./run-log.server.ts";
 import { ThreadStoreLayer } from "./thread-store.server.ts";
 
 const ChatQuery = {
@@ -78,7 +78,7 @@ class ChatApi extends HttpApi.make("chat").add(
         query: ChatQuery,
         headers: ResumeHeaders,
         success: [Hydrate, RunEvents],
-        error: EventLog.InvalidCursor.pipe(HttpApiSchema.status(400)),
+        error: RunLog.InvalidCursor.pipe(HttpApiSchema.status(400)),
       }),
     )
     // POST /api/chat: TanStack AI's `fetchServerSentEvents` posts an AG-UI
@@ -94,7 +94,7 @@ class ChatApi extends HttpApi.make("chat").add(
         payload: AgUiSchema.RunAgentInput,
         headers: ResumeHeaders,
         success: RunEvents,
-        error: EventLog.InvalidCursor.pipe(HttpApiSchema.status(400)),
+        error: RunLog.InvalidCursor.pipe(HttpApiSchema.status(400)),
       }),
     )
     // POST /api/chat/cancel: the page's Stop button. TanStack AI's `stop()`
@@ -117,7 +117,7 @@ const ChatHandlers = HttpApiBuilder.group(
   ChatApi,
   "chat",
   Effect.fn(function* (handlers) {
-    const log = yield* EventLog.EventLog;
+    const log = yield* RunLog.RunLog;
 
     // A run's log as SSE, after `after`. The worker may be down, so the stream
     // ends once nothing has arrived for a while. A store failure is the
@@ -125,7 +125,7 @@ const ChatHandlers = HttpApiBuilder.group(
     // cursor is a 400.
     const follow = (threadId: string, runId: string, after: string | undefined) =>
       log.subscribe(threadId, runId, after).pipe(
-        Effect.catchTag("EventLogError", Effect.die),
+        Effect.catchTag("RunLogError", Effect.die),
         Effect.map((events) =>
           HttpApiSchema.withHeaders({
             body: events.pipe(
@@ -170,7 +170,7 @@ const ChatHandlers = HttpApiBuilder.group(
 const ChatRoutes = HttpApiBuilder.layer(ChatApi).pipe(
   Layer.provide(ChatHandlers),
   Layer.provide(AuthenticationLayer),
-  Layer.provideMerge(Layer.mergeAll(ThreadStoreLayer, EventLogStoreLayer, WorkflowClientLayer)),
+  Layer.provideMerge(Layer.mergeAll(ThreadStoreLayer, RunLogStoreLayer, WorkflowClientLayer)),
   Layer.provide(HttpServer.layerServices),
 );
 

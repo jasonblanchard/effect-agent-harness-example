@@ -1,10 +1,11 @@
 import { NodeRedis } from "@effect/platform-node";
 import { Config, Effect, Layer, Option, Schema, Stream } from "effect";
 import { Redis } from "effect/persistence";
-import { AgUi, EventLog } from "effect-agent-harness";
+import type { AgUiSchema } from "effect/ai";
+import { Agent, RunLog } from "effect-agent-harness";
 
 /**
- * The `EventLog` on Redis Streams, shared between the worker that appends and
+ * The `RunLog` on Redis Streams, shared between the worker that appends and
  * the web process that streams.
  *
  * Each run is one stream. Redis gives every entry an id that increases within
@@ -71,21 +72,20 @@ const appendScript = Redis.script(
 /** A stream entry id, as `XADD *` makes them. */
 const ENTRY_ID = /^[0-9]+-[0-9]+$/;
 
-const toEventLogError = (cause: unknown) =>
-  new EventLog.EventLogError({ cause });
+const toRunLogError = (cause: unknown) =>
+  new RunLog.RunLogError({ cause });
 
-const toStored = ([id, fields]: typeof Entry.Type): EventLog.Stored => {
+const toStored = ([id, fields]: typeof Entry.Type): RunLog.Stored => {
   const json = fields[fields.indexOf("event") + 1];
   return {
     cursor: id,
-    // Written only by `append`, from an `AgUi.Event`. Not decoded: the library has
-    // no schema for the `AgUi.Event` union, only for each event.
-    event: JSON.parse(json ?? "null") as AgUi.Event,
+    // Written only by `append`, from an `AgUiSchema.Event`, so not decoded.
+    event: JSON.parse(json ?? "null") as AgUiSchema.Event,
   };
 };
 
-export const EventLogStoreLayer = Layer.effect(
-  EventLog.EventLog,
+export const RunLogStoreLayer = Layer.effect(
+  RunLog.RunLog,
   Effect.gen(function* () {
     const redis = yield* Redis.Redis;
     const append = redis.eval(appendScript);
@@ -107,13 +107,13 @@ export const EventLogStoreLayer = Layer.effect(
     const atCursor = (key: string, cursor: string) =>
       Effect.gen(function* () {
         if (!ENTRY_ID.test(cursor)) {
-          return yield* new EventLog.InvalidCursor({ cursor });
+          return yield* new RunLog.InvalidCursor({ cursor });
         }
         const [entry] = yield* redis
           .send("XRANGE", key, cursor, cursor)
           .pipe(Effect.flatMap(decodeEntries));
         if (entry === undefined) {
-          return yield* new EventLog.InvalidCursor({ cursor });
+          return yield* new RunLog.InvalidCursor({ cursor });
         }
         return toStored(entry);
       });
@@ -144,15 +144,15 @@ export const EventLogStoreLayer = Layer.effect(
         ),
       );
 
-    return EventLog.EventLog.of({
+    return RunLog.RunLog.of({
       append: (threadId, runId, event) =>
         append(
           streamKey(threadId, runId),
           JSON.stringify(event),
-          AgUi.isTerminal(event),
+          Agent.isTerminal(event),
         ).pipe(
           Effect.map((cursor) => ({ cursor, event })),
-          Effect.mapError(toEventLogError),
+          Effect.mapError(toRunLogError),
         ),
 
       read: (threadId, runId, after) =>
@@ -165,7 +165,7 @@ export const EventLogStoreLayer = Layer.effect(
         }).pipe(
           Effect.catchIf(
             (error) => error._tag !== "InvalidCursor",
-            (error) => Effect.fail(toEventLogError(error)),
+            (error) => Effect.fail(toRunLogError(error)),
           ),
         ),
 
@@ -177,7 +177,7 @@ export const EventLogStoreLayer = Layer.effect(
           const history = yield* range(key, after);
           // The run's last event so far, or nothing if it hasn't appended yet.
           const last = history.at(-1) ?? start;
-          if (last !== undefined && AgUi.isTerminal(last.event)) {
+          if (last !== undefined && Agent.isTerminal(last.event)) {
             return Stream.fromIterable(history);
           }
 
@@ -188,20 +188,20 @@ export const EventLogStoreLayer = Layer.effect(
                 page,
                 end === undefined
                   ? Option.some(from)
-                  : page.some((stored) => AgUi.isTerminal(stored.event))
+                  : page.some((stored) => Agent.isTerminal(stored.event))
                   ? Option.none<string>()
                   : Option.some(end.cursor),
               ] as const;
             }),
           );
           return Stream.concat(Stream.fromIterable(history), live).pipe(
-            Stream.takeUntil((stored) => AgUi.isTerminal(stored.event)),
-            Stream.mapError(toEventLogError),
+            Stream.takeUntil((stored) => Agent.isTerminal(stored.event)),
+            Stream.mapError(toRunLogError),
           );
         }).pipe(
           Effect.catchIf(
             (error) => error._tag !== "InvalidCursor",
-            (error) => Effect.fail(toEventLogError(error)),
+            (error) => Effect.fail(toRunLogError(error)),
           ),
         ),
     });

@@ -49,7 +49,7 @@
                 env.DATABASE_URL = "postgres://127.0.0.1:5432/effect_agent_harness_example";
 
                 # Where run events go: `redis` or `durable-streams`. Both stores run, so switching needs only this.
-                env.EVENT_LOG_STORE = "redis";
+                env.RUN_LOG_STORE = "redis";
 
                 # With the append-only file, run events survive a restart.
                 services.redis = {

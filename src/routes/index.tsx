@@ -47,7 +47,7 @@ function ChatThread({ threadId }: { readonly threadId: string }) {
   // effect-agent-harness's approval interrupts are plain AG-UI interrupts, without TanStack's
   // own binding metadata, so TanStack lists them as `unbound` and offers no
   // `resolveInterrupt`. Answer them with AG-UI `resume` entries instead: the
-  // payload is effect-agent-harness's `AgUi.ApprovalResponse`.
+  // payload is effect-agent-harness's `Agent.ApprovalResponse`.
   const approvals = interrupts.filter((interrupt) => interrupt.reason === "tool-approval");
   const [decisions, setDecisions] = useState<Record<string, boolean>>({});
   const decide = (interruptId: string, approved: boolean) => {

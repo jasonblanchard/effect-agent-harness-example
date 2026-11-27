@@ -5,7 +5,7 @@ import { FetchHttpClient } from "effect/http";
 import { History } from "effect-agent-harness";
 import { AssistantWorkflow, ToolsLayer } from "./assistant.server.ts";
 import { WorkflowRunnerLayer } from "./cluster.server.ts";
-import { EventLogStoreLayer } from "./event-log.server.ts";
+import { RunLogStoreLayer } from "./run-log.server.ts";
 import { ThreadStoreLayer } from "./thread-store.server.ts";
 
 // Reasoning is switched on here, in the provider's config: effect-agent-harness streams
@@ -33,7 +33,7 @@ const WorkerLayer = AssistantWorkflow.layer.pipe(
     Layer.mergeAll(
       ModelLayer,
       ToolsLayer,
-      EventLogStoreLayer,
+      RunLogStoreLayer,
       History.layerServer.pipe(Layer.provide(ThreadStoreLayer)),
     ),
   ),
